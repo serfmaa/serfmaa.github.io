@@ -57,9 +57,9 @@ layout: default
 
 <script>
   (function () {
-    var POLL_MS = 5000;   // how often to check an offline camera
-    var CHECK_MS = 2000;  // how often to check a playing camera
-    var MISSES = 2;       // consecutive failed checks before we unload the player
+    var POLL_MS = 5000;    // how often to check whether an offline camera is live
+    var WATCH_MS = 2000;   // how often to check that a playing camera is still advancing
+    var STALL_MS = 10000;  // unload the player if video time hasn't advanced for this long
 
     // If the skin renders its error dialog inside a shadow root, page CSS can't
     // reach it, so inject the same hiding rule into any shadow roots we can see.
@@ -67,22 +67,24 @@ layout: default
     function hideErrorDialogs(root) {
       if (!root) return;
       root.querySelectorAll('*').forEach(function (n) {
-        if (n.shadowRoot && !n.shadowRoot.querySelector('style[data-hide-errors]')) {
-          var s = document.createElement('style');
-          s.setAttribute('data-hide-errors', '');
-          s.textContent = HIDE;
-          n.shadowRoot.appendChild(s);
+        if (n.shadowRoot) {
+          if (!n.shadowRoot.querySelector('style[data-hide-errors]')) {
+            var s = document.createElement('style');
+            s.setAttribute('data-hide-errors', '');
+            s.textContent = HIDE;
+            n.shadowRoot.appendChild(s);
+          }
+          hideErrorDialogs(n.shadowRoot);
         }
-        if (n.shadowRoot) hideErrorDialogs(n.shadowRoot);
       });
     }
 
-    document.querySelectorAll('hlsjs-video[data-src]').forEach(function (el) {
+    function setup(el) {
       var url = el.getAttribute('data-src');
       var player = el.closest('live-video-player');
       var playing = false;
-      var misses = 0;
-      var timer = null;
+      var lastTime = -1;
+      var lastChange = 0;
 
       async function isLive() {
         try {
@@ -97,28 +99,41 @@ layout: default
 
       function start() {
         playing = true;
-        misses = 0;
-        el.removeAttribute('src');   // clear first so the same URL isn't ignored
+        lastTime = -1;
+        lastChange = Date.now();
         el.src = url;
-        el.play().catch(function () {});
+        try {
+          var p = el.play();
+          if (p && p.catch) p.catch(function () {});
+        } catch (e) {}
       }
 
-      // Unload before the player hits a fatal error, so no error dialog appears.
+      // Unload so the player never reaches a fatal error (and its error dialog).
       function stop() {
         playing = false;
-        el.removeAttribute('src');
+        try { el.src = ''; } catch (e) {}
       }
 
+      // Offline: poll the playlist until the camera is live.
+      // Playing: don't touch the server; just watch whether video time advances.
       async function tick() {
-        var ok = await isLive();
-        if (!playing) {
-          if (ok) start();
-        } else if (!ok) {
-          if (++misses >= MISSES) stop();
-        } else {
-          misses = 0;
+        try {
+          if (!playing) {
+            if (await isLive()) start();
+          } else if (!document.hidden && !el.paused) {
+            var t = el.currentTime;
+            if (t !== lastTime) {
+              lastTime = t;
+              lastChange = Date.now();
+            } else if (Date.now() - lastChange > STALL_MS) {
+              stop();
+            }
+          }
+        } catch (e) {
+          console.error('camera loop error', e);
+        } finally {
+          setTimeout(tick, playing ? WATCH_MS : POLL_MS);
         }
-        timer = setTimeout(tick, playing ? CHECK_MS : POLL_MS);
       }
 
       // Backup: if an error still happens, reset and go back to waiting.
@@ -129,11 +144,17 @@ layout: default
 
       hideErrorDialogs(player);
       tick();
-    });
+    }
 
-    // The skin may render after load, so re-run once it's defined.
-    customElements.whenDefined('live-video-skin').then(function () {
+    // The player elements are defined by module scripts that load after this
+    // script runs, so wait for them before touching src/play().
+    Promise.all([
+      customElements.whenDefined('live-video-player'),
+      customElements.whenDefined('hlsjs-video')
+    ]).then(function () {
+      document.querySelectorAll('hlsjs-video[data-src]').forEach(setup);
       setTimeout(function () { hideErrorDialogs(document); }, 500);
+      setTimeout(function () { hideErrorDialogs(document); }, 3000);
     });
   })();
 </script>
