@@ -1,7 +1,6 @@
 ---
 layout: default
 ---
-
 <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.1.0/live-video.js"></script>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.1.0/media/hlsjs-video.js"></script>
 
@@ -13,6 +12,18 @@ layout: default
   .cam h2 { margin: 0 0 .4rem; font-size: 1rem; }
   live-video-skin { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
   @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+
+  /* Hide Video.js's built-in error dialog (it shows raw errors like "no EXTM3U delimiter") */
+  media-error-dialog { display: none !important; }
+
+  /* Our own friendly status shown while a camera is offline */
+  .screen { position: relative; }
+  .offline {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    background: #000; color: #9a9a9a; font-size: 1rem; text-align: center; padding: 1rem;
+  }
+  .offline[hidden] { display: none; }
 </style>
 
 <div class="grid">
@@ -61,6 +72,16 @@ layout: default
       var url = el.getAttribute('data-src');
       var timer = null;
 
+      var player = el.closest('live-video-player');
+      var screen = document.createElement('div');
+      screen.className = 'screen';
+      player.parentNode.insertBefore(screen, player);
+      screen.appendChild(player);
+      var overlay = document.createElement('div');
+      overlay.className = 'offline';
+      overlay.textContent = 'Camera offline \u2013 waiting for stream\u2026';
+      screen.appendChild(overlay);
+
       function schedule() {
         if (!timer) timer = setTimeout(check, POLL_MS);
       }
@@ -81,13 +102,16 @@ layout: default
         if (await isLive()) {
           el.removeAttribute('src');
           el.src = url;
-          try { await el.play(); } catch (e) { }
+          try { await el.play(); } catch (e) {}
         } else {
           schedule();
         }
       }
 
+      el.addEventListener('playing', function () { overlay.hidden = true; });
+
       el.addEventListener('error', function () {
+        overlay.hidden = false;
         el.removeAttribute('src');
         schedule();
       });
