@@ -2,13 +2,10 @@
 layout: default
 ---
 
-<!-- Video.js 10.1.0: live preset (player + skin) and the hls.js media element.
-     Keep every @videojs/cdn URL pinned to the same version. -->
 <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.1.0/live-video.js"></script>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.1.0/media/hlsjs-video.js"></script>
 
 <style>
-  /* Widen the theme's narrow content column so the 2x2 grid fits */
   .wrapper { width: auto; max-width: 1400px; }
   section { width: auto; float: none; max-width: 100%; }
 
@@ -19,12 +16,11 @@ layout: default
 </style>
 
 <div class="grid">
-
   <div class="cam">
     <h2>Camera 1</h2>
     <live-video-player>
       <live-video-skin>
-        <hlsjs-video src="https://serfcams.duckdns.org/live/cam1.stream/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
+        <hlsjs-video data-src="https://mycams.duckdns.org/live/cam1.stream/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
       </live-video-skin>
     </live-video-player>
   </div>
@@ -33,7 +29,7 @@ layout: default
     <h2>Camera 2</h2>
     <live-video-player>
       <live-video-skin>
-        <hlsjs-video src="https://serfcams.duckdns.org/live/cam2.stream/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
+        <hlsjs-video data-src="https://mycams.duckdns.org/live/cam2.stream/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
       </live-video-skin>
     </live-video-player>
   </div>
@@ -42,7 +38,7 @@ layout: default
     <h2>Camera 3</h2>
     <live-video-player>
       <live-video-skin>
-        <hlsjs-video src="https://serfcams.duckdns.org/live/cam3.stream/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
+        <hlsjs-video data-src="https://mycams.duckdns.org/live/cam3.stream/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
       </live-video-skin>
     </live-video-player>
   </div>
@@ -51,9 +47,52 @@ layout: default
     <h2>Camera 4</h2>
     <live-video-player>
       <live-video-skin>
-        <hlsjs-video src="https://serfcams.duckdns.org/live/cam4.stream/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
+        <hlsjs-video data-src="https://mycams.duckdns.org/live/cam4.stream/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
       </live-video-skin>
     </live-video-player>
   </div>
-
 </div>
+
+<script>
+  (function () {
+    var POLL_MS = 5000;
+
+    document.querySelectorAll('hlsjs-video[data-src]').forEach(function (el) {
+      var url = el.getAttribute('data-src');
+      var timer = null;
+
+      function schedule() {
+        if (!timer) timer = setTimeout(check, POLL_MS);
+      }
+
+      async function isLive() {
+        try {
+          var r = await fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), { cache: 'no-store' });
+          if (!r.ok) return false;
+          var text = await r.text();
+          return text.indexOf('#EXTM3U') === 0;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      async function check() {
+        timer = null;
+        if (await isLive()) {
+          el.removeAttribute('src');
+          el.src = url;
+          try { await el.play(); } catch (e) { }
+        } else {
+          schedule();
+        }
+      }
+
+      el.addEventListener('error', function () {
+        el.removeAttribute('src');
+        schedule();
+      });
+
+      check();
+    });
+  })();
+</script>
