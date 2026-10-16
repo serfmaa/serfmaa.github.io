@@ -1,62 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Live Cams</title>
+---
+layout: default
+---
 
-  <!-- Video.js 10.1.0: live preset (player + skin) and the hls.js media element.
-       Keep every @videojs/cdn URL pinned to the same version. -->
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.1.0/live-video.js"></script>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.1.0/media/hlsjs-video.js"></script>
+<!-- Video.js 10.1.0: live preset (player + skin) and the hls.js media element.
+     Keep every @videojs/cdn URL pinned to the same version. -->
+<script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.1.0/live-video.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.1.0/media/hlsjs-video.js"></script>
 
-  <style>
-    body { margin: 0; padding: 1rem; background: #111; font-family: system-ui, sans-serif; color: #eee; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 1400px; margin: 0 auto; }
-    .cam h2 { margin: 0 0 .4rem; font-size: 1rem; font-weight: 600; }
-    live-video-skin { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
-    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
-  </style>
-</head>
-<body>
-  <div class="grid">
+<style>
+  /* Widen the theme's narrow content column so the 2x2 grid fits */
+  .wrapper { width: auto; max-width: 1400px; }
+  section { width: auto; float: none; max-width: 100%; }
 
-    <div class="cam">
-      <h2>Camera 1</h2>
-      <live-video-player>
-        <live-video-skin>
-          <hlsjs-video src="https://YOUR-SERVER/live/cam1/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
-        </live-video-skin>
-      </live-video-player>
-    </div>
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .cam h2 { margin: 0 0 .4rem; font-size: 1rem; }
+  live-video-skin { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+</style>
 
-    <div class="cam">
-      <h2>Camera 2</h2>
-      <live-video-player>
-        <live-video-skin>
-          <hlsjs-video src="https://YOUR-SERVER/live/cam2/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
-        </live-video-skin>
-      </live-video-player>
-    </div>
+<div class="grid">
 
-    <div class="cam">
-      <h2>Camera 3</h2>
-      <live-video-player>
-        <live-video-skin>
-          <hlsjs-video src="https://YOUR-SERVER/live/cam3/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
-        </live-video-skin>
-      </live-video-player>
-    </div>
-
-    <div class="cam">
-      <h2>Camera 4</h2>
-      <live-video-player>
-        <live-video-skin>
-          <hlsjs-video src="https://YOUR-SERVER/live/cam4/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
-        </live-video-skin>
-      </live-video-player>
-    </div>
-
+  <div class="cam">
+    <h2>Camera 1</h2>
+    <live-video-player>
+      <live-video-skin>
+        <hlsjs-video src="https://YOUR-SERVER/live/cam1/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
+      </live-video-skin>
+    </live-video-player>
   </div>
-</body>
-</html>
+
+  <div class="cam">
+    <h2>Camera 2</h2>
+    <live-video-player>
+      <live-video-skin>
+        <hlsjs-video src="https://YOUR-SERVER/live/cam2/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
+      </live-video-skin>
+    </live-video-player>
+  </div>
+
+  <div class="cam">
+    <h2>Camera 3</h2>
+    <live-video-player>
+      <live-video-skin>
+        <hlsjs-video src="https://YOUR-SERVER/live/cam3/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
+      </live-video-skin>
+    </live-video-player>
+  </div>
+
+  <div class="cam">
+    <h2>Camera 4</h2>
+    <live-video-player>
+      <live-video-skin>
+        <hlsjs-video src="https://YOUR-SERVER/live/cam4/playlist.m3u8" autoplay muted playsinline></hlsjs-video>
+      </live-video-skin>
+    </live-video-player>
+  </div>
+
+</div>
